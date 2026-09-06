@@ -1,0 +1,265 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  username     String   @unique
+  passwordHash String
+  role         String   @default("FOUNDER") // FOUNDER | STAFF
+  phone        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  salesRecorded        Sale[]              @relation("SalesRecorded")
+  paymentsRecorded     CustomerPayment[]   @relation("PaymentsRecorded")
+  expensesPaid         Expense[]           @relation("ExpensesPaid")
+  settlementsGiven     FounderSettlement[] @relation("SettlementsGiven")
+  settlementsReceived  FounderSettlement[] @relation("SettlementsReceived")
+}
+
+model Product {
+  id                   String   @id @default(cuid())
+  sku                  String   @unique
+  name                 String
+  category             String   @default("CLEANER") // CLEANER | RAW_MATERIAL | PACKAGING
+  packSizeLitres       Float    @default(5.0)
+  mrp                  Float
+  currentSellingPrice  Float
+  currentEstimatedCost Float    @default(0.0)
+  minStockAlertLevel   Int      @default(10)
+  imageEmoji           String   @default("📦")
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  saleItems            SaleItem[]
+  purchaseItems        PurchaseItem[]
+  stockMovements       StockMovement[]
+  productionBatches    ProductionBatch[]
+  materialUsages       ProductionMaterialUsage[]
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  businessName String?
+  phone        String   @unique
+  city         String   @default("Raipur")
+  address      String?
+  creditLimit  Float    @default(50000)
+  notes        String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sales        Sale[]
+  payments     CustomerPayment[]
+}
+
+model Supplier {
+  id            String   @id @default(cuid())
+  name          String
+  contactPerson String?
+  phone         String   @unique
+  city          String   @default("Raipur")
+  gstNumber     String?
+  address       String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  purchases     Purchase[]
+  payments      SupplierPayment[]
+}
+
+model Sale {
+  id              String   @id @default(cuid())
+  saleNumber      String   @unique
+  customerId      String
+  date            DateTime @default(now())
+  subtotalAmount  Float
+  discountAmount  Float    @default(0)
+  totalAmount     Float
+  paymentStatus   String   @default("UNPAID") // UNPAID | PARTIALLY_PAID | PAID
+  paidAmount      Float    @default(0)
+  notes           String?
+  createdById     String?
+  isArchived      Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer        Customer          @relation(fields: [customerId], references: [id])
+  createdBy       User?             @relation("SalesRecorded", fields: [createdById], references: [id])
+  items           SaleItem[]
+  payments        CustomerPayment[]
+}
+
+model SaleItem {
+  id               String   @id @default(cuid())
+  saleId           String
+  productId        String
+  quantity         Int
+  unitPrice        Float
+  lineTotal        Float
+  unitCostSnapshot Float    @default(0)
+  createdAt        DateTime @default(now())
+
+  sale             Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product          Product  @relation(fields: [productId], references: [id])
+}
+
+model CustomerPayment {
+  id              String   @id @default(cuid())
+  paymentNumber   String   @unique
+  customerId      String
+  saleId          String?
+  amount          Float
+  paymentDate     DateTime @default(now())
+  paymentMethod   String   @default("UPI") // CASH | UPI | BANK_TRANSFER | CHEQUE
+  referenceNumber String?
+  notes           String?
+  recordedById    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  customer        Customer @relation(fields: [customerId], references: [id])
+  sale            Sale?    @relation(fields: [saleId], references: [id])
+  recordedBy      User?    @relation("PaymentsRecorded", fields: [recordedById], references: [id])
+}
+
+model ExpenseCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  isDefault Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  expenses  Expense[]
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  categoryId    String
+  amount        Float
+  date          DateTime @default(now())
+  description   String
+  paidByUserId  String
+  paymentSource String   @default("BUSINESS_CASH") // BUSINESS_CASH | BUSINESS_BANK | FOUNDER_PERSONAL
+  receiptUrl    String?
+  isSettled     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category      ExpenseCategory @relation(fields: [categoryId], references: [id])
+  paidByUser    User            @relation("ExpensesPaid", fields: [paidByUserId], references: [id])
+}
+
+model Purchase {
+  id             String   @id @default(cuid())
+  purchaseNumber String   @unique
+  supplierId     String
+  date           DateTime @default(now())
+  totalAmount    Float
+  paidAmount     Float    @default(0)
+  paymentStatus  String   @default("UNPAID")
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  supplier       Supplier          @relation(fields: [supplierId], references: [id])
+  items          PurchaseItem[]
+  payments       SupplierPayment[]
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  productId  String
+  quantity   Float
+  unitCost   Float
+  lineTotal  Float
+  createdAt  DateTime @default(now())
+
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model SupplierPayment {
+  id              String   @id @default(cuid())
+  supplierId      String
+  purchaseId      String?
+  amount          Float
+  paymentDate     DateTime @default(now())
+  paymentMethod   String   @default("BANK_TRANSFER")
+  paymentSource   String   @default("BUSINESS_BANK")
+  referenceNumber String?
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  supplier        Supplier  @relation(fields: [supplierId], references: [id])
+  purchase        Purchase? @relation(fields: [purchaseId], references: [id])
+}
+
+model ProductionBatch {
+  id                   String   @id @default(cuid())
+  batchNumber          String   @unique
+  productId            String
+  plannedLitres        Float
+  actualLitresProduced Float
+  unitsProduced        Int
+  unitCostCalculated   Float    @default(0)
+  startDate            DateTime @default(now())
+  completedDate        DateTime?
+  status               String   @default("COMPLETED")
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  product              Product  @relation(fields: [productId], references: [id])
+  materialsUsed        ProductionMaterialUsage[]
+}
+
+model ProductionMaterialUsage {
+  id                   String   @id @default(cuid())
+  batchId              String
+  rawMaterialProductId String
+  quantityConsumed     Float
+  unitCostSnapshot     Float    @default(0)
+  createdAt            DateTime @default(now())
+
+  batch                ProductionBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  rawMaterial          Product         @relation(fields: [rawMaterialProductId], references: [id])
+}
+
+model StockMovement {
+  id             String   @id @default(cuid())
+  productId      String
+  quantityChange Float    // positive for inward, negative for outward
+  movementType   String   // SALE | PURCHASE | PRODUCTION_INPUT | PRODUCTION_OUTPUT | ADJUSTMENT | INITIAL_STOCK
+  referenceId    String?  // saleId, purchaseId, batchId, etc.
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  product        Product  @relation(fields: [productId], references: [id])
+}
+
+model FounderSettlement {
+  id             String   @id @default(cuid())
+  fromUserId     String
+  toUserId       String
+  amount         Float
+  settlementDate DateTime @default(now())
+  notes          String?
+  status         String   @default("COMPLETED")
+  createdAt      DateTime @default(now())
+
+  fromUser       User     @relation("SettlementsGiven", fields: [fromUserId], references: [id])
+  toUser         User     @relation("SettlementsReceived", fields: [toUserId], references: [id])
+}

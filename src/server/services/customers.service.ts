@@ -57,4 +57,30 @@ export class CustomersService {
       },
     });
   }
+
+  static async deleteCustomer(id: string) {
+    const customer = await prisma.customer.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { sales: true, payments: true },
+        },
+      },
+    });
+
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
+    // If customer has no linked sales or payments, delete record completely
+    if (customer._count.sales === 0 && customer._count.payments === 0) {
+      return prisma.customer.delete({ where: { id } });
+    }
+
+    // Otherwise mark as inactive (archived) to preserve historical accounting records
+    return prisma.customer.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
 }

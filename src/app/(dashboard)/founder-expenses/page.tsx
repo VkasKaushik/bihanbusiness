@@ -15,6 +15,8 @@ import {
   User,
   Calendar,
   FileText,
+  Trash2,
+  AlertCircle,
 } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/formatters';
 
@@ -54,20 +56,49 @@ export default function FounderExpensesPage() {
   const [filter, setFilter] = useState<'ALL' | 'FOUNDER_PERSONAL' | 'BUSINESS'>('ALL');
   const [selectedTransaction, setSelectedTransaction] = useState<FounderExpenseTransaction | null>(null);
 
+  // Delete / Remove Transaction state
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
+  const loadData = async () => {
+    try {
+      const res = await fetch('/api/founder-expenses');
+      const resData = await res.json();
+      if (resData?.summary) {
+        setData(resData);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetch('/api/founder-expenses')
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData?.summary) {
-          setData(resData);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+    loadData();
   }, []);
+
+  const handleRemoveTransaction = async () => {
+    if (!selectedTransaction) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      const res = await fetch(`/api/founder-expenses?id=${selectedTransaction.id}`, {
+        method: 'DELETE',
+      });
+      const resData = await res.json();
+      if (!res.ok) throw new Error(resData.error || 'Failed to remove transaction');
+
+      setSelectedTransaction(null);
+      setConfirmDelete(false);
+      await loadData();
+    } catch (err: any) {
+      setDeleteError(err.message || 'Error removing transaction');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   if (loading || !data) {
     return (
@@ -422,13 +453,80 @@ export default function FounderExpensesPage() {
               </div>
             </div>
 
-            {/* Close button */}
-            <button
-              onClick={() => setSelectedTransaction(null)}
-              className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors active:scale-98"
-            >
-              Close Details
-            </button>
+            {/* Delete Confirmation Box or Action Buttons */}
+            {confirmDelete ? (
+              <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-extrabold text-xs text-rose-900">
+                      Remove this transaction?
+                    </div>
+                    <p className="text-[11px] text-rose-800/90 mt-1 leading-relaxed">
+                      This will permanently delete the transaction of{' '}
+                      <span className="font-bold font-tabular">
+                        {formatCurrency(selectedTransaction.amount)}
+                      </span>{' '}
+                      and automatically recalculate founder settlement splits and balances.
+                    </p>
+                  </div>
+                </div>
+
+                {deleteError && (
+                  <div className="p-2 bg-white rounded-lg border border-rose-300 text-rose-700 text-[11px] font-semibold">
+                    {deleteError}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={() => {
+                      setConfirmDelete(false);
+                      setDeleteError('');
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deleting}
+                    onClick={handleRemoveTransaction}
+                    className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs shadow-xs active:scale-95 transition-all"
+                  >
+                    {deleting ? 'Removing...' : 'Yes, Remove'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmDelete(true);
+                    setDeleteError('');
+                  }}
+                  className="py-3 px-3.5 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                  title="Remove this transaction"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Remove Transaction</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTransaction(null);
+                    setConfirmDelete(false);
+                  }}
+                  className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition-colors active:scale-98"
+                >
+                  Close Details
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -102,3 +102,41 @@ export async function GET() {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Transaction ID is required' }, { status: 400 });
+    }
+
+    // Check Expense table
+    const expense = await prisma.expense.findUnique({ where: { id } });
+    if (expense) {
+      await prisma.expense.delete({ where: { id } });
+      return NextResponse.json({ success: true, message: 'Transaction removed successfully' });
+    }
+
+    // Check FounderSettlement table
+    const settlement = await prisma.founderSettlement.findUnique({ where: { id } });
+    if (settlement) {
+      await prisma.founderSettlement.delete({ where: { id } });
+      return NextResponse.json({ success: true, message: 'Settlement removed successfully' });
+    }
+
+    return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
+  } catch (error: any) {
+    console.error('Delete founder transaction error:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Failed to remove transaction' },
+      { status: 500 }
+    );
+  }
+}

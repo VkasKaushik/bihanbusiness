@@ -21,6 +21,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
+import { ProductImage } from '@/components/common/ProductImage';
 
 interface UniversalPlusModalProps {
   isOpen: boolean;
@@ -772,7 +773,9 @@ export default function UniversalPlusModal({
                         className="p-3 rounded-2xl border border-slate-200 bg-white flex items-center justify-between shadow-xs"
                       >
                         <div className="flex items-center gap-2.5">
-                          <span className="text-xl">{p.imageEmoji || '🧴'}</span>
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-xs">
+                            <ProductImage product={p} className="w-full h-full object-contain" />
+                          </div>
                           <div>
                             <div className="text-xs font-bold text-slate-900 leading-tight">
                               {p.name}
@@ -1077,7 +1080,9 @@ export default function UniversalPlusModal({
                         className="p-3 rounded-2xl border border-slate-200 bg-white flex items-center justify-between shadow-xs"
                       >
                         <div className="flex items-center gap-2.5">
-                          <span className="text-xl">{p.imageEmoji || '🧴'}</span>
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-xs">
+                            <ProductImage product={p} className="w-full h-full object-contain" />
+                          </div>
                           <div>
                             <div className="text-xs font-bold text-slate-900 leading-tight">
                               {p.name}

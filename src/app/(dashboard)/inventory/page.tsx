@@ -17,6 +17,7 @@ import {
 import { formatCurrency, formatDate, formatTime, formatRelativeDate } from '@/lib/formatters';
 import { ProductStockSummary } from '@/types';
 import UniversalPlusModal from '@/components/common/UniversalPlusModal';
+import { ProductImage } from '@/components/common/ProductImage';
 
 export default function StockTrackingPage() {
   const [products, setProducts] = useState<ProductStockSummary[]>([]);
@@ -187,8 +188,8 @@ export default function StockTrackingPage() {
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-2xl shrink-0">
-                    {prod.imageEmoji}
+                  <div className="w-14 h-14 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-xs">
+                    <ProductImage product={prod} className="w-full h-full object-contain" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">

@@ -25,6 +25,7 @@ import {
   getEndOfISTDay,
   getStartOfISTMonth,
 } from '@/lib/date-utils';
+import { ProductImage } from '@/components/common/ProductImage';
 
 interface ProductItem {
   id: string;
@@ -840,7 +841,9 @@ export default function SalesPage() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                          <span className="text-2xl">{prod.imageEmoji}</span>
+                          <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center p-1 shrink-0 overflow-hidden shadow-xs">
+                            <ProductImage product={prod} className="w-full h-full object-contain" />
+                          </div>
                           <div>
                             <div className="text-xs font-bold text-slate-900 leading-snug">
                               {prod.name}

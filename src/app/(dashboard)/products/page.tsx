@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Tags, Edit2, Check, X, ShieldAlert, Sparkles } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { ProductStockSummary } from '@/types';
+import { ProductImage } from '@/components/common/ProductImage';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<ProductStockSummary[]>([]);
@@ -105,7 +106,9 @@ export default function ProductsPage() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
-                    <span className="text-3xl">{prod.imageEmoji}</span>
+                    <div className="w-16 h-16 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center p-1.5 shrink-0 overflow-hidden shadow-xs">
+                      <ProductImage product={prod} className="w-full h-full object-contain" />
+                    </div>
                     <div>
                       <h3 className="font-extrabold text-sm text-slate-900 leading-tight">
                         {prod.name}

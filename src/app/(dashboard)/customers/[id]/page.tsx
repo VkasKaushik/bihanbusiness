@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency, formatDate, formatISTDateTime } from '@/lib/formatters';
 import { CustomerDetail, CustomerDetailSale, CustomerNote } from '@/types';
+import { ProductImage } from '@/components/common/ProductImage';
 
 interface ProductItem {
   id: string;
@@ -939,8 +940,10 @@ export default function CustomerDetailPage() {
                     className="p-3 flex items-center justify-between bg-white text-xs"
                   >
                     <div className="min-w-0 pr-2">
-                      <div className="font-bold text-slate-900 truncate flex items-center gap-1.5">
-                        <span>{item.product?.imageEmoji || '📦'}</span>
+                      <div className="font-bold text-slate-900 truncate flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center p-0.5 shrink-0 overflow-hidden shadow-xs">
+                          <ProductImage product={item.product} className="w-full h-full object-contain" />
+                        </div>
                         <span>{item.product?.name || 'Product'}</span>
                       </div>
                       <div className="text-[11px] text-slate-400 mt-0.5 font-tabular">
@@ -1175,8 +1178,10 @@ export default function CustomerDetailPage() {
                         className="p-3 flex items-center justify-between bg-white text-xs"
                       >
                         <div className="min-w-0 pr-2">
-                          <div className="font-bold text-slate-900 flex items-center gap-1.5 truncate">
-                            <span>{p.imageEmoji}</span>
+                          <div className="font-bold text-slate-900 flex items-center gap-2 truncate">
+                            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center p-0.5 shrink-0 overflow-hidden shadow-xs">
+                              <ProductImage product={p} className="w-full h-full object-contain" />
+                            </div>
                             <span>{p.name}</span>
                           </div>
                           <div className="text-[11px] text-slate-400 font-tabular mt-0.5">

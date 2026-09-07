@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   X,
   UserPlus,
@@ -19,6 +20,8 @@ import {
   Phone,
   CreditCard,
   ChevronRight,
+  FileText,
+  MessageCircle,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { ProductImage } from '@/components/common/ProductImage';
@@ -123,6 +126,8 @@ export default function UniversalPlusModal({
   // SUCCESS Confirmation State
   const [successHeadline, setSuccessHeadline] = useState('');
   const [successDetails, setSuccessDetails] = useState<string[]>([]);
+  const [createdSaleId, setCreatedSaleId] = useState<string | null>(null);
+  const [createdSaleWhatsAppUrl, setCreatedSaleWhatsAppUrl] = useState<string>('');
 
   // Load data on open
   useEffect(() => {
@@ -178,6 +183,8 @@ export default function UniversalPlusModal({
     setCollRef('');
     setExpAmount(0);
     setExpDesc('');
+    setCreatedSaleId(null);
+    setCreatedSaleWhatsAppUrl('');
   };
 
   // Total calculations for Add Customer order
@@ -304,6 +311,27 @@ export default function UniversalPlusModal({
       const saleData = await saleRes.json();
       if (!saleRes.ok) throw new Error(saleData.error || 'Failed to record first order');
 
+      if (saleData.sale) {
+        setCreatedSaleId(saleData.sale.id);
+        const displayInvNo = (saleData.sale.saleNumber || '').replace(/^SAL-/, 'BH-');
+        const balDue = Math.max(0, (saleData.sale.totalAmount || 0) - (saleData.sale.paidAmount || 0));
+        const msg = `Hello *${newCustBusinessName.trim()}*,\n\n` +
+          `Thank you for choosing *BIHAAN HOME CARE*!\n` +
+          `Here are the details for your recent invoice:\n\n` +
+          `📄 *Invoice No:* ${displayInvNo}\n` +
+          `💰 *Total Amount:* ${formatCurrency(saleData.sale.totalAmount)}\n` +
+          `✅ *Paid Amount:* ${formatCurrency(saleData.sale.paidAmount)}\n` +
+          (balDue > 0
+            ? `⚠️ *Balance Due:* ${formatCurrency(balDue)}\n\n`
+            : `🎉 *Status:* Fully Paid\n\n`) +
+          `_Every day is a fresh beginning._\n` +
+          `*BIHAAN HOME CARE*, Raipur`;
+
+        let cleanP = newCustPhone.replace(/[^0-9]/g, '');
+        if (cleanP.length === 10) cleanP = '91' + cleanP;
+        setCreatedSaleWhatsAppUrl(`https://wa.me/${cleanP}?text=${encodeURIComponent(msg)}`);
+      }
+
       setSuccessHeadline('Customer & Order Recorded! ✓');
       setSuccessDetails([
         `Customer: ${newCustBusinessName.trim()}`,
@@ -364,6 +392,27 @@ export default function UniversalPlusModal({
       if (!res.ok) throw new Error(data.error || 'Failed to record sale');
 
       const customerName = selectedCustomerObj?.businessName || selectedCustomerObj?.name || 'Customer';
+
+      if (data.sale) {
+        setCreatedSaleId(data.sale.id);
+        const displayInvNo = (data.sale.saleNumber || '').replace(/^SAL-/, 'BH-');
+        const balDue = Math.max(0, (data.sale.totalAmount || 0) - (data.sale.paidAmount || 0));
+        const msg = `Hello *${customerName}*,\n\n` +
+          `Thank you for choosing *BIHAAN HOME CARE*!\n` +
+          `Here are the details for your recent invoice:\n\n` +
+          `📄 *Invoice No:* ${displayInvNo}\n` +
+          `💰 *Total Amount:* ${formatCurrency(data.sale.totalAmount)}\n` +
+          `✅ *Paid Amount:* ${formatCurrency(data.sale.paidAmount)}\n` +
+          (balDue > 0
+            ? `⚠️ *Balance Due:* ${formatCurrency(balDue)}\n\n`
+            : `🎉 *Status:* Fully Paid\n\n`) +
+          `_Every day is a fresh beginning._\n` +
+          `*BIHAAN HOME CARE*, Raipur`;
+
+        let cleanP = selectedCustomerObj?.phone?.replace(/[^0-9]/g, '') || '';
+        if (cleanP.length === 10) cleanP = '91' + cleanP;
+        setCreatedSaleWhatsAppUrl(`https://wa.me/${cleanP}?text=${encodeURIComponent(msg)}`);
+      }
 
       setSuccessHeadline('Order Recorded Successfully! ✓');
       setSuccessDetails([
@@ -1470,6 +1519,29 @@ export default function UniversalPlusModal({
                 </div>
               ))}
             </div>
+
+            {createdSaleId && (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Link
+                  href={`/invoices/${createdSaleId}`}
+                  onClick={() => onClose()}
+                  className="py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-98 flex items-center justify-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>View Invoice</span>
+                </Link>
+
+                <a
+                  href={createdSaleWhatsAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2.5 px-3 bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs rounded-xl shadow-xs transition-all active:scale-98 flex items-center justify-center gap-1.5"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span>Share WhatsApp</span>
+                </a>
+              </div>
+            )}
 
             <button
               onClick={handleFinish}

@@ -13,6 +13,9 @@ import {
   ChevronRight,
   CreditCard,
   UserPlus,
+  FileText,
+  MessageCircle,
+  Share2,
 } from 'lucide-react';
 import {
   formatCurrency,
@@ -64,6 +67,7 @@ export default function SalesPage() {
   const [saleModalOpen, setSaleModalOpen] = useState(false);
   const [collectModalOpen, setCollectModalOpen] = useState(false);
   const [addCustomerModalOpen, setAddCustomerModalOpen] = useState(false);
+  const [createdSaleForInvoice, setCreatedSaleForInvoice] = useState<any | null>(null);
 
   // New Sale Form State
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -313,12 +317,41 @@ export default function SalesPage() {
       setPaidAmount(0);
       setNotes('');
       setSaleModalOpen(false);
+      setCreatedSaleForInvoice(data.sale);
       await loadData();
     } catch (err: any) {
       setError(err.message || 'Error recording sale');
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const getCreatedSaleWhatsAppUrl = () => {
+    if (!createdSaleForInvoice) return '#';
+    const displayInvoiceNumber = createdSaleForInvoice.saleNumber.replace(/^SAL-/, 'BH-');
+    const cust = customers.find((c) => c.id === createdSaleForInvoice.customerId);
+    const customerName = cust?.businessName || cust?.name || 'Customer';
+    const balanceDue = Math.max(
+      0,
+      (createdSaleForInvoice.totalAmount || 0) - (createdSaleForInvoice.paidAmount || 0)
+    );
+
+    const msg = `Hello *${customerName}*,\n\n` +
+      `Thank you for choosing *BIHAAN HOME CARE*!\n` +
+      `Here are the details for your recent invoice:\n\n` +
+      `📄 *Invoice No:* ${displayInvoiceNumber}\n` +
+      `💰 *Total Amount:* ${formatCurrency(createdSaleForInvoice.totalAmount)}\n` +
+      `✅ *Paid Amount:* ${formatCurrency(createdSaleForInvoice.paidAmount)}\n` +
+      (balanceDue > 0
+        ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}\n\n`
+        : `🎉 *Status:* Fully Paid\n\n`) +
+      `_Every day is a fresh beginning._\n` +
+      `*BIHAAN HOME CARE*, Raipur`;
+
+    let cleanP = cust?.phone?.replace(/[^0-9]/g, '') || '';
+    if (cleanP.length === 10) cleanP = '91' + cleanP;
+
+    return `https://wa.me/${cleanP}?text=${encodeURIComponent(msg)}`;
   };
 
   const handleSaveCollection = async (e: React.FormEvent) => {
@@ -617,25 +650,35 @@ export default function SalesPage() {
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-black text-slate-900 font-tabular">
-                      {formatCurrency(sale.totalAmount)}
-                    </div>
-                    <span
-                      className={`inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-0.5 uppercase tracking-wide ${
-                        sale.paymentStatus === 'PAID'
-                          ? 'bg-emerald-100 text-emerald-800'
+                  <div className="text-right shrink-0 flex items-center gap-2">
+                    <div>
+                      <div className="text-sm font-black text-slate-900 font-tabular">
+                        {formatCurrency(sale.totalAmount)}
+                      </div>
+                      <span
+                        className={`inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-full mt-0.5 uppercase tracking-wide ${
+                          sale.paymentStatus === 'PAID'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : sale.paymentStatus === 'PARTIALLY_PAID'
+                            ? 'bg-amber-100 text-amber-800'
+                            : 'bg-rose-100 text-rose-800'
+                        }`}
+                      >
+                        {sale.paymentStatus === 'PAID'
+                          ? 'Paid'
                           : sale.paymentStatus === 'PARTIALLY_PAID'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-rose-100 text-rose-800'
-                      }`}
+                          ? 'Partial'
+                          : 'Due'}
+                      </span>
+                    </div>
+
+                    <Link
+                      href={`/invoices/${sale.id}`}
+                      title="View / Print Non-GST Invoice"
+                      className="p-1.5 rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 active:scale-95 transition-all"
                     >
-                      {sale.paymentStatus === 'PAID'
-                        ? 'Paid'
-                        : sale.paymentStatus === 'PARTIALLY_PAID'
-                        ? 'Partial'
-                        : 'Due'}
-                    </span>
+                      <FileText className="w-4 h-4" />
+                    </Link>
                   </div>
                 </div>
               );
@@ -1176,6 +1219,81 @@ export default function SalesPage() {
                 {submitting ? 'Saving Customer...' : 'Save Customer'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: POST-SALE INVOICE SUCCESS CONFIRMATION             */}
+      {/* ========================================================= */}
+      {createdSaleForInvoice && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 shadow-2xl space-y-4 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="font-black text-base text-slate-900">
+                Sale Recorded Successfully!
+              </h3>
+              <p className="text-xs text-slate-500">
+                Invoice #{createdSaleForInvoice.saleNumber?.replace(/^SAL-/, 'BH-')}
+              </p>
+            </div>
+
+            <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 text-xs space-y-1.5 text-left">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Total Amount:</span>
+                <span className="font-extrabold font-tabular text-slate-900">
+                  {formatCurrency(createdSaleForInvoice.totalAmount)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Paid Amount:</span>
+                <span className="font-bold font-tabular text-emerald-700">
+                  {formatCurrency(createdSaleForInvoice.paidAmount)}
+                </span>
+              </div>
+              {createdSaleForInvoice.totalAmount - createdSaleForInvoice.paidAmount > 0 && (
+                <div className="flex justify-between border-t border-slate-200/80 pt-1">
+                  <span className="text-rose-600 font-bold">Balance Due:</span>
+                  <span className="font-black font-tabular text-rose-700">
+                    {formatCurrency(
+                      createdSaleForInvoice.totalAmount - createdSaleForInvoice.paidAmount
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <Link
+                href={`/invoices/${createdSaleForInvoice.id}`}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-98 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
+              >
+                <FileText className="w-4 h-4" />
+                <span>View / Print Invoice</span>
+              </Link>
+
+              <a
+                href={getCreatedSaleWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-teal-600 hover:bg-teal-700 active:scale-98 text-white font-extrabold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 shadow-xs transition-all"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Share on WhatsApp</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setCreatedSaleForInvoice(null)}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

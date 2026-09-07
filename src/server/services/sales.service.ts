@@ -148,13 +148,31 @@ export class SalesService {
         customer: { select: { id: true, name: true, businessName: true, phone: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, sku: true, imageEmoji: true } },
+            product: { select: { id: true, name: true, sku: true, packSizeLitres: true, imageEmoji: true } },
           },
         },
         createdBy: { select: { id: true, name: true } },
       },
       orderBy: { date: 'desc' },
       take: limit,
+    });
+  }
+
+  static async getSaleById(saleId: string) {
+    return prisma.sale.findUnique({
+      where: { id: saleId },
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: true,
+          },
+        },
+        createdBy: { select: { id: true, name: true } },
+        payments: {
+          orderBy: { createdAt: 'asc' },
+        },
+      },
     });
   }
 

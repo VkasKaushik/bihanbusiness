@@ -50,7 +50,7 @@ export class CustomersService {
             items: {
               include: {
                 product: {
-                  select: { id: true, name: true, sku: true, imageEmoji: true },
+                  select: { id: true, name: true, sku: true, packSizeLitres: true, imageEmoji: true },
                 },
               },
             },

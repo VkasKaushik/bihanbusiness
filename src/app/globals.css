@@ -41,3 +41,16 @@ body {
   background: #E2E8F0;
   border-radius: 9999px;
 }
+
+/* Print styling for clean A4 sales invoice */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm;
+  }
+  body {
+    background-color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -74,9 +74,9 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#F8F9FD] pb-24">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#F8F9FD] pb-24 print:pb-0 print:bg-white">
       {/* 1. TOP HEADER: Clean, calm and premium */}
-      <header className="sticky top-0 z-30 bg-[#F8F9FD]/95 backdrop-blur-md px-4 pt-3.5 pb-2.5 flex items-center justify-between border-b border-[#ECEEF3]">
+      <header className="sticky top-0 z-30 bg-[#F8F9FD]/95 backdrop-blur-md px-4 pt-3.5 pb-2.5 flex items-center justify-between border-b border-[#ECEEF3] print:hidden">
         {/* Left: [B] Logo + BIHAN BUSINESS + small date below */}
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-sm shadow-sm">
@@ -104,10 +104,10 @@ export default function DashboardLayout({
       </header>
 
       {/* Main Screen Content */}
-      <main className="flex-1 px-4 py-2">{children}</main>
+      <main className="flex-1 px-4 py-2 print:p-0 print:m-0">{children}</main>
 
       {/* 2. BOTTOM NAVIGATION: Pulse, Sales, [+], Money, More */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#ECEEF3] shadow-nav px-3 py-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#ECEEF3] shadow-nav px-3 py-2 print:hidden">
         <div className="max-w-md md:max-w-xl mx-auto flex items-center justify-between relative">
           {/* Left Nav Items (Pulse, Sales) */}
           <div className="flex items-center justify-around flex-1">

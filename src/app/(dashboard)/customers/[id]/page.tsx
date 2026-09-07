@@ -127,6 +127,39 @@ export default function CustomerDetailPage() {
     `Hello ${customer?.businessName || customer?.name || ''}, greetings from BIHAN!`
   );
 
+  const getSaleWhatsAppUrl = (sale: CustomerDetailSale) => {
+    if (!customer) return '#';
+    const displayInvoiceNumber = sale.saleNumber.replace(/^SAL-/, 'BH-');
+    const customerName = customer.businessName || customer.name;
+    const balanceDue = Math.max(0, sale.totalAmount - sale.paidAmount);
+
+    const itemsSummary = sale.items
+      .map(
+        (it) =>
+          `• ${it.product?.name || 'Item'} (${it.product?.packSizeLitres || 5}L) x ${it.quantity}`
+      )
+      .join('\n');
+
+    const msg = `Hello *${customerName}*,\n\n` +
+      `Thank you for choosing *BIHAAN HOME CARE*!\n` +
+      `Here are the details for your recent invoice:\n\n` +
+      `📄 *Invoice No:* ${displayInvoiceNumber}\n` +
+      `📅 *Date:* ${formatDate(sale.date)}\n` +
+      `📦 *Items:*\n${itemsSummary}\n\n` +
+      `💰 *Total Amount:* ${formatCurrency(sale.totalAmount)}\n` +
+      `✅ *Paid Amount:* ${formatCurrency(sale.paidAmount)}\n` +
+      (balanceDue > 0
+        ? `⚠️ *Balance Due:* ${formatCurrency(balanceDue)}\n\n`
+        : `🎉 *Status:* Fully Paid\n\n`) +
+      `_Every day is a fresh beginning._\n` +
+      `*BIHAAN HOME CARE*, Raipur`;
+
+    let cleanP = customer.phone.replace(/[^0-9]/g, '');
+    if (cleanP.length === 10) cleanP = '91' + cleanP;
+
+    return `https://wa.me/${cleanP}?text=${encodeURIComponent(msg)}`;
+  };
+
   // Delete Customer handler
   const handleDeleteCustomer = async () => {
     setDeletingCustomer(true);
@@ -995,7 +1028,28 @@ export default function CustomerDetailPage() {
               </div>
             )}
 
-            <div className="flex gap-2 pt-1">
+            {/* Invoice Quick Actions */}
+            <div className="pt-2 grid grid-cols-2 gap-2">
+              <Link
+                href={`/invoices/${selectedSale.id}`}
+                className="bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white font-extrabold py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>View Invoice</span>
+              </Link>
+
+              <a
+                href={getSaleWhatsAppUrl(selectedSale)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-teal-600 hover:bg-teal-700 active:scale-95 text-white font-extrabold py-2.5 px-3 rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Share WhatsApp</span>
+              </a>
+            </div>
+
+            <div className="flex gap-2 pt-1 border-t border-slate-100 mt-2">
               <button
                 type="button"
                 onClick={() => {

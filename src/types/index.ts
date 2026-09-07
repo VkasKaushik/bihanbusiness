@@ -171,6 +171,7 @@ export interface CustomerDetailSaleItem {
     name: string;
     sku: string;
     imageEmoji: string;
+    packSizeLitres?: number;
   };
 }
 

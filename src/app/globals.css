@@ -46,7 +46,7 @@ body {
 @media print {
   @page {
     size: A4 portrait;
-    margin: 8mm;
+    margin: 10mm 12mm;
   }
   body {
     background-color: #ffffff !important;

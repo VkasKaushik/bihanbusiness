@@ -157,4 +157,33 @@ export class SalesService {
       take: limit,
     });
   }
+
+  static async deleteSale(saleId: string) {
+    return await prisma.$transaction(async (tx) => {
+      const sale = await tx.sale.findUnique({
+        where: { id: saleId },
+        include: { items: true },
+      });
+
+      if (!sale) {
+        throw new Error('Sale not found');
+      }
+
+      // 1. Revert stock deductions: remove stock movements created for this sale
+      await tx.stockMovement.deleteMany({
+        where: { referenceId: sale.id },
+      });
+
+      // 2. Delete linked upfront payments recorded for this sale
+      await tx.customerPayment.deleteMany({
+        where: { saleId: sale.id },
+      });
+
+      // 3. Mark sale as archived
+      return await tx.sale.update({
+        where: { id: sale.id },
+        data: { isArchived: true },
+      });
+    });
+  }
 }

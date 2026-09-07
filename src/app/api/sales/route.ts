@@ -62,3 +62,30 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Sale ID is required' }, { status: 400 });
+    }
+
+    await SalesService.deleteSale(id);
+
+    return NextResponse.json({ success: true, message: 'Sale removed successfully' });
+  } catch (error: any) {
+    console.error('Delete sale error:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Error deleting sale' },
+      { status: 400 }
+    );
+  }
+}
+

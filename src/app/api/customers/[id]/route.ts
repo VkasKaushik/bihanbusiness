@@ -67,3 +67,31 @@ export async function POST(
     );
   }
 }
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = params;
+    if (!id) {
+      return NextResponse.json({ error: 'Customer ID is required' }, { status: 400 });
+    }
+
+    await CustomersService.deleteCustomer(id);
+
+    return NextResponse.json({ success: true, message: 'Customer removed successfully' });
+  } catch (error: any) {
+    console.error('Delete customer error:', error);
+    return NextResponse.json(
+      { error: error?.message || 'Error deleting customer' },
+      { status: 400 }
+    );
+  }
+}
+

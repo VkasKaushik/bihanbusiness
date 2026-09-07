@@ -23,6 +23,7 @@ import {
   ShoppingBag,
   Send,
   ExternalLink,
+  Trash2,
 } from 'lucide-react';
 import { formatCurrency, formatDate, formatISTDateTime } from '@/lib/formatters';
 import { CustomerDetail, CustomerDetailSale, CustomerNote } from '@/types';
@@ -50,6 +51,16 @@ export default function CustomerDetailPage() {
   const [selectedSale, setSelectedSale] = useState<CustomerDetailSale | null>(null);
   const [collectModalOpen, setCollectModalOpen] = useState(false);
   const [saleModalOpen, setSaleModalOpen] = useState(false);
+
+  // Delete Customer State
+  const [deleteCustomerModalOpen, setDeleteCustomerModalOpen] = useState(false);
+  const [deletingCustomer, setDeletingCustomer] = useState(false);
+  const [deleteCustomerError, setDeleteCustomerError] = useState('');
+
+  // Delete Sale State
+  const [saleToDelete, setSaleToDelete] = useState<CustomerDetailSale | null>(null);
+  const [deletingSale, setDeletingSale] = useState(false);
+  const [deleteSaleError, setDeleteSaleError] = useState('');
 
   // New Note State
   const [newNoteText, setNewNoteText] = useState('');
@@ -114,6 +125,46 @@ export default function CustomerDetailPage() {
   const greetingText = encodeURIComponent(
     `Hello ${customer?.businessName || customer?.name || ''}, greetings from BIHAN!`
   );
+
+  // Delete Customer handler
+  const handleDeleteCustomer = async () => {
+    setDeletingCustomer(true);
+    setDeleteCustomerError('');
+    try {
+      const res = await fetch(`/api/customers/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to remove customer');
+
+      router.push('/customers');
+    } catch (err: any) {
+      setDeleteCustomerError(err.message || 'Error removing customer');
+      setDeletingCustomer(false);
+    }
+  };
+
+  // Delete Sale handler
+  const handleDeleteSale = async () => {
+    if (!saleToDelete) return;
+    setDeletingSale(true);
+    setDeleteSaleError('');
+    try {
+      const res = await fetch(`/api/sales?id=${saleToDelete.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to remove sale');
+
+      setSaleToDelete(null);
+      setSelectedSale(null);
+      await loadCustomer();
+    } catch (err: any) {
+      setDeleteSaleError(err.message || 'Error removing sale');
+    } finally {
+      setDeletingSale(false);
+    }
+  };
 
   // Add Note handler
   const handleAddNote = async (e: React.FormEvent) => {
@@ -279,9 +330,22 @@ export default function CustomerDetailPage() {
           <span>Customers</span>
         </Link>
 
-        <span className="text-[11px] font-bold text-slate-400 font-tabular">
-          ID: {customer.id.slice(-6).toUpperCase()}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-bold text-slate-400 font-tabular">
+            ID: {customer.id.slice(-6).toUpperCase()}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteCustomerError('');
+              setDeleteCustomerModalOpen(true);
+            }}
+            title="Remove Customer"
+            className="w-7 h-7 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 flex items-center justify-center transition-colors active:scale-95"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* ========================================================= */}
@@ -530,8 +594,19 @@ export default function CustomerDetailPage() {
                           : sale.paymentStatus === 'PARTIALLY_PAID'
                           ? 'Partial'
                           : 'Due'}
-                      </span>
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSaleToDelete(sale);
+                        setDeleteSaleError('');
+                      }}
+                      title="Remove Sale"
+                      className="p-1 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors active:scale-95"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
@@ -697,6 +772,28 @@ export default function CustomerDetailPage() {
             <span className="font-medium text-slate-500 block mt-0.5">
               Unregistered / Composition Scheme
             </span>
+          </div>
+
+          <div className="p-3 bg-rose-50/40 rounded-2xl border border-rose-100 sm:col-span-2 flex items-center justify-between gap-3">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-rose-800 block">
+                Account Removal
+              </span>
+              <span className="text-xs text-slate-600 font-medium block mt-0.5">
+                Permanently remove or archive this customer profile
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setDeleteCustomerError('');
+                setDeleteCustomerModalOpen(true);
+              }}
+              className="text-xs font-bold text-rose-700 hover:text-rose-800 bg-white hover:bg-rose-50 border border-rose-200 active:scale-95 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-xs"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+              <span>Remove Customer</span>
+            </button>
           </div>
         </div>
       </section>
@@ -894,12 +991,27 @@ export default function CustomerDetailPage() {
               </div>
             )}
 
-            <button
-              onClick={() => setSelectedSale(null)}
-              className="w-full bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold py-2.5 rounded-2xl text-xs transition-all"
-            >
-              Close
-            </button>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setSaleToDelete(selectedSale);
+                  setDeleteSaleError('');
+                }}
+                className="bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-bold py-2.5 px-3.5 rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Remove Sale</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedSale(null)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-bold py-2.5 rounded-2xl text-xs transition-all"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1209,6 +1321,108 @@ export default function CustomerDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: CONFIRM REMOVE CUSTOMER                            */}
+      {/* ========================================================= */}
+      {deleteCustomerModalOpen && (
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="font-extrabold text-base text-slate-900">
+                Remove Customer Account?
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to remove{' '}
+                <span className="font-extrabold text-slate-900">
+                  {customer.businessName || customer.name}
+                </span>
+                ? If they have existing transactions, the account will be safely archived without affecting accounting history.
+              </p>
+            </div>
+
+            {deleteCustomerError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 text-center">
+                {deleteCustomerError}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                disabled={deletingCustomer}
+                onClick={() => setDeleteCustomerModalOpen(false)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deletingCustomer}
+                onClick={handleDeleteCustomer}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {deletingCustomer ? 'Removing...' : 'Yes, Remove Customer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: CONFIRM REMOVE SALE                                */}
+      {/* ========================================================= */}
+      {saleToDelete && (
+        <div className="fixed inset-0 z-60 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1.5">
+              <h3 className="font-extrabold text-base text-slate-900">
+                Remove Sale #{saleToDelete.saleNumber}?
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to delete this sale for{' '}
+                <span className="font-extrabold font-tabular text-slate-900">
+                  {formatCurrency(saleToDelete.totalAmount)}
+                </span>
+                ? This will archive the transaction, revert stock deductions, and update customer balances.
+              </p>
+            </div>
+
+            {deleteSaleError && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700 text-center">
+                {deleteSaleError}
+              </div>
+            )}
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                disabled={deletingSale}
+                onClick={() => setSaleToDelete(null)}
+                className="flex-1 bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deletingSale}
+                onClick={handleDeleteSale}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold py-2.5 rounded-xl text-xs shadow-xs transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {deletingSale ? 'Removing...' : 'Yes, Remove Sale'}
+              </button>
+            </div>
           </div>
         </div>
       )}

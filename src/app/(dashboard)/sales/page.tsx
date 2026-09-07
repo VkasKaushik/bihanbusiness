@@ -582,9 +582,18 @@ export default function SalesPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-sm text-slate-900 truncate">
-                        {sale.customer?.name || 'Walk-in Customer'}
-                      </span>
+                      {sale.customer?.id ? (
+                        <Link
+                          href={`/customers/${sale.customer.id}`}
+                          className="font-extrabold text-sm text-slate-900 hover:text-indigo-600 transition-colors truncate"
+                        >
+                          {sale.customer.name}
+                        </Link>
+                      ) : (
+                        <span className="font-extrabold text-sm text-slate-900 truncate">
+                          {sale.customer?.name || 'Walk-in Customer'}
+                        </span>
+                      )}
                       {sale.customer?.businessName && (
                         <span className="text-[11px] text-slate-400 truncate hidden sm:inline">
                           ({sale.customer.businessName})
@@ -678,15 +687,15 @@ export default function SalesPage() {
           <div className="divide-y divide-slate-100">
             {debtorCustomers.slice(0, 4).map((c) => (
               <div key={c.id} className="py-2.5 first:pt-1 last:pb-1 flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="font-extrabold text-xs text-slate-900 truncate">
+                <Link href={`/customers/${c.id}`} className="min-w-0 flex-1 block group">
+                  <div className="font-extrabold text-xs text-slate-900 group-hover:text-indigo-600 transition-colors truncate">
                     {c.name}
                   </div>
                   <div className="text-[11px] text-slate-400 truncate">
                     {c.businessName ? `${c.businessName} • ` : ''}
                     {c.phone}
                   </div>
-                </div>
+                </Link>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-xs font-extrabold text-amber-900 font-tabular">

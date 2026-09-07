@@ -254,9 +254,18 @@ export default function OverviewPage() {
                   className="p-3.5 flex items-center justify-between hover:bg-slate-50/60 transition-colors"
                 >
                   <div className="min-w-0 pr-3">
-                    <div className="text-xs font-bold text-slate-900 truncate leading-tight">
-                      {sale.customerName}
-                    </div>
+                    {sale.customerId ? (
+                      <Link
+                        href={`/customers/${sale.customerId}`}
+                        className="text-xs font-bold text-slate-900 hover:text-indigo-600 transition-colors truncate leading-tight block"
+                      >
+                        {sale.customerName}
+                      </Link>
+                    ) : (
+                      <div className="text-xs font-bold text-slate-900 truncate leading-tight">
+                        {sale.customerName}
+                      </div>
+                    )}
                     <div className="text-[11px] text-slate-400 mt-0.5">
                       {dateText} · {statusLabel}
                     </div>

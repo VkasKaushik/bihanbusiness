@@ -60,6 +60,7 @@ export interface DashboardSummary {
   recentSales: Array<{
     id: string;
     saleNumber: string;
+    customerId?: string;
     customerName: string;
     totalAmount: number;
     paidAmount: number;
@@ -150,4 +151,77 @@ export interface CustomerSummary {
   totalPaid: number;
   outstandingBalance: number;
   lastSaleDate: string | null;
+}
+
+export interface CustomerNote {
+  id: string;
+  text: string;
+  createdAt: string;
+  authorName?: string;
+}
+
+export interface CustomerDetailSaleItem {
+  id: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  product: {
+    id: string;
+    name: string;
+    sku: string;
+    imageEmoji: string;
+  };
+}
+
+export interface CustomerDetailSale {
+  id: string;
+  saleNumber: string;
+  date: string;
+  subtotalAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+  paymentStatus: string;
+  paidAmount: number;
+  notes?: string | null;
+  items: CustomerDetailSaleItem[];
+  createdBy?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface CustomerDetailPayment {
+  id: string;
+  paymentNumber: string;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: string;
+  referenceNumber?: string | null;
+  notes?: string | null;
+  recordedBy?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+export interface CustomerDetail {
+  id: string;
+  name: string;
+  businessName: string | null;
+  phone: string;
+  city: string;
+  address: string | null;
+  creditLimit: number;
+  notes: CustomerNote[];
+  rawNotes?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  financialSummary: {
+    totalPurchased: number;
+    totalPaid: number;
+    totalDue: number;
+  };
+  sales: CustomerDetailSale[];
+  payments: CustomerDetailPayment[];
 }

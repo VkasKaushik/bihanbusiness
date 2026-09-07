@@ -114,7 +114,7 @@ export class DashboardService {
     const recentSales = await prisma.sale.findMany({
       where: { isArchived: false },
       include: {
-        customer: { select: { name: true } },
+        customer: { select: { id: true, name: true } },
       },
       orderBy: { date: 'desc' },
       take: 5,
@@ -154,6 +154,7 @@ export class DashboardService {
       recentSales: recentSales.map((s) => ({
         id: s.id,
         saleNumber: s.saleNumber,
+        customerId: s.customer.id,
         customerName: s.customer.name,
         totalAmount: s.totalAmount,
         paidAmount: s.paidAmount,

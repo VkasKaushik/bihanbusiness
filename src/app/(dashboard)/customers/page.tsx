@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Users,
   Plus,
@@ -251,8 +252,8 @@ export default function CustomersPage() {
               className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs hover:border-slate-300 transition-all flex flex-col justify-between"
             >
               <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
+                <Link href={`/customers/${cust.id}`} className="block flex-1 min-w-0 pr-2 group">
+                  <div className="font-extrabold text-sm text-slate-900 group-hover:text-indigo-600 transition-colors flex items-center gap-1.5">
                     <span>{cust.name}</span>
                     {cust.businessName && (
                       <span className="text-[11px] font-normal text-slate-500">
@@ -264,19 +265,17 @@ export default function CustomersPage() {
                   <div className="text-xs text-slate-500 flex items-center gap-3 mt-1">
                     <span className="flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      <a href={`tel:${cust.phone}`} className="hover:underline text-blue-700">
-                        {cust.phone}
-                      </a>
+                      <span>{cust.phone}</span>
                     </span>
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-400" />
                       {cust.city}
                     </span>
                   </div>
-                </div>
+                </Link>
 
                 {/* Outstanding Balance Badge */}
-                <div className="text-right">
+                <Link href={`/customers/${cust.id}`} className="text-right shrink-0 block group">
                   <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                     Balance Due
                   </div>
@@ -289,7 +288,7 @@ export default function CustomersPage() {
                       ? formatCurrency(cust.outstandingBalance)
                       : 'Cleared ✓'}
                   </div>
-                </div>
+                </Link>
               </div>
 
               {/* Action Buttons: Quick Collect & Call */}

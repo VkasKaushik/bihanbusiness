@@ -1,4 +1,18 @@
 import React from 'react';
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Building2,
+  FileText,
+  Coins,
+  Info,
+  Leaf,
+  ShieldCheck,
+  Home,
+  CheckCircle2,
+} from 'lucide-react';
 import { formatCurrency, formatDate, numberToWordsIndian } from '@/lib/formatters';
 
 export interface InvoiceSale {
@@ -11,6 +25,10 @@ export interface InvoiceSale {
   paymentStatus: string;
   paidAmount: number;
   notes?: string | null;
+  createdBy?: {
+    id: string;
+    name: string;
+  } | null;
   customer: {
     id: string;
     name: string;
@@ -48,88 +66,165 @@ interface InvoiceDocumentProps {
   sale: InvoiceSale;
 }
 
+// Helper to provide nice brand product tagline matching official branding
+function getProductSubtitle(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.includes('classic') || lower.includes('white')) {
+    return 'Fresh & Clean Floors';
+  }
+  if (lower.includes('lavender')) {
+    return 'Fresh Lavender Fragrance';
+  }
+  if (lower.includes('toilet')) {
+    return 'Cleaner Toilets, Fresher Starts';
+  }
+  return 'Premium Surface Care & Hygiene';
+}
+
 export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ sale }) => {
   const displayInvoiceNumber = sale.saleNumber.replace(/^SAL-/, 'BH-');
   const balanceDue = Math.max(0, sale.totalAmount - sale.paidAmount);
-  const totalCans = sale.items.reduce((sum, it) => sum + it.quantity, 0);
 
-  // Determine payment method from payments or fallback
-  const paymentMethod =
-    sale.payments && sale.payments.length > 0
-      ? sale.payments[0].paymentMethod
+  // Determine payment terms display
+  const paymentTerms =
+    sale.paidAmount >= sale.totalAmount && sale.totalAmount > 0
+      ? 'Paid / Immediate'
       : sale.paidAmount > 0
-      ? 'UPI / Cash'
-      : 'Credit (Due)';
+      ? 'Cash / Credit'
+      : 'Credit / Due';
+
+  const salesperson = sale.createdBy?.name || 'Vikas Kaushik';
+
+  // Customer display values
+  const customerTitle = sale.customer.businessName || sale.customer.name;
+  const customerFullAddress = [
+    sale.customer.address,
+    sale.customer.city || 'Bilaspur, Chhattisgarh 495001',
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
-    <div className="invoice-document bg-white text-slate-800 font-sans mx-auto max-w-[210mm] min-h-[297mm] p-8 sm:p-12 border border-slate-200 print:border-none print:p-0 print:m-0 print:max-w-none print:min-h-0 print:w-full print:shadow-none shadow-xl rounded-2xl print:rounded-none flex flex-col justify-between">
-      <div>
+    <div className="invoice-document bg-white text-slate-800 font-sans mx-auto max-w-[210mm] p-6 sm:p-9 border border-slate-200 shadow-xl rounded-2xl print:shadow-none print:border-none print:p-0 print:m-0 print:max-w-none print:w-full print:rounded-none flex flex-col justify-between select-none">
+      <div className="space-y-4">
         {/* ========================================================= */}
-        {/* 1. HEADER: BRANDING & INVOICE META                       */}
+        {/* 1. TOP HEADER: LOGO, COMPANY INFO & BRAND SLOGAN         */}
         {/* ========================================================= */}
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-6 border-b-2 border-slate-900/80">
-          {/* Brand Left */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-3">
+        <div className="flex justify-between items-start gap-4 pb-3 border-b border-slate-100 relative">
+          {/* Logo & Company Address */}
+          <div className="flex items-start gap-4">
+            {/* Logo */}
+            <div className="shrink-0 pt-0.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/bihan-logo.png"
                 alt="BIHAAN HOME CARE"
-                className="h-12 sm:h-14 w-auto object-contain"
+                className="h-14 sm:h-16 w-auto object-contain"
               />
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 uppercase">
-                  BIHAAN HOME CARE
-                </h1>
-                <p className="text-xs font-semibold text-emerald-700 italic tracking-wide">
-                  Every day is a fresh beginning.
-                </p>
-              </div>
-            </div>
-
-            <div className="text-[11px] sm:text-xs text-slate-500 space-y-0.5 pt-1">
-              <p className="font-medium">Premium Cleaning & Home Care Products</p>
-              <p>Raipur, Chhattisgarh — 492001, India</p>
-              <p>Phone / WhatsApp: +91 91095 86968</p>
-            </div>
-          </div>
-
-          {/* Invoice Meta Right */}
-          <div className="sm:text-right space-y-2 self-stretch sm:self-auto flex flex-col justify-between sm:items-end">
-            <div>
-              <span className="inline-block text-2xl sm:text-3xl font-black text-slate-900 tracking-wider">
-                INVOICE
-              </span>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Sales Invoice (Non-GST)
+              <p className="text-[10px] italic font-medium text-slate-400 mt-1 tracking-tight">
+                Every day is a fresh beginning.
               </p>
             </div>
 
-            <div className="space-y-1 text-xs sm:text-sm font-medium pt-1">
-              <div className="flex sm:justify-end gap-2">
-                <span className="text-slate-400 font-semibold">Invoice No:</span>
-                <span className="font-black text-slate-900 font-tabular">{displayInvoiceNumber}</span>
+            {/* Vertical Divider */}
+            <div className="w-[1.5px] h-20 bg-slate-200 self-center hidden sm:block mx-1" />
+
+            {/* Company Details */}
+            <div className="text-left space-y-1">
+              <div>
+                <h1 className="text-sm font-black tracking-tight text-[#07478E] uppercase leading-none">
+                  BIHAAN HOME CARE
+                </h1>
+                <p className="text-[11px] font-semibold text-[#0284c7] mt-0.5">
+                  Cleaning Solutions for Healthier Spaces
+                </p>
               </div>
-              <div className="flex sm:justify-end gap-2">
-                <span className="text-slate-400 font-semibold">Invoice Date:</span>
-                <span className="font-bold text-slate-900">{formatDate(sale.date)}</span>
+
+              <div className="text-[10px] text-slate-500 space-y-0.5 pt-0.5">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3 h-3 text-[#07478E] shrink-0" />
+                  <span>Bilaspur, Chhattisgarh 495001</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Phone className="w-3 h-3 text-[#07478E] shrink-0" />
+                  <span>+91 93000 12345 / +91 91095 86968</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Mail className="w-3 h-3 text-[#07478E] shrink-0" />
+                  <span>care@bihanhomecare.in</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Globe className="w-3 h-3 text-[#07478E] shrink-0" />
+                  <span>bihanhomecare.in</span>
+                </div>
               </div>
-              <div className="flex sm:justify-end items-center gap-2 pt-1">
-                <span className="text-slate-400 font-semibold text-xs">Payment Status:</span>
-                <span
-                  className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    sale.paymentStatus === 'PAID'
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      : sale.paymentStatus === 'PARTIALLY_PAID'
-                      ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                      : 'bg-rose-100 text-rose-800 border border-rose-300'
-                  }`}
-                >
-                  {sale.paymentStatus === 'PAID'
-                    ? 'PAID'
-                    : sale.paymentStatus === 'PARTIALLY_PAID'
-                    ? 'PARTIAL'
-                    : 'PAYMENT DUE'}
+            </div>
+          </div>
+
+          {/* Right Top Slogan & Soft Decorative Wave */}
+          <div className="text-right shrink-0 pt-1">
+            <div className="inline-block relative">
+              <div className="text-right font-black tracking-wider text-[11px] sm:text-xs text-[#07478E] uppercase leading-tight">
+                <span>CLEANER</span>
+                <br />
+                <span>SAFER</span>
+                <br />
+                <span>HAPPIER SPACES</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================= */}
+        {/* 2. INVOICE TITLE & META TABLE                             */}
+        {/* ========================================================= */}
+        <div className="flex justify-between items-center gap-4 pt-1">
+          {/* Left Title */}
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-wider text-[#07478E] leading-none">
+              INVOICE
+            </h2>
+            <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 tracking-[0.22em] uppercase mt-1">
+              THANK YOU FOR YOUR BUSINESS
+            </p>
+          </div>
+
+          {/* Right Meta Grid Table */}
+          <div className="w-60 sm:w-64 border border-slate-200/90 rounded-lg overflow-hidden text-xs bg-white">
+            <div className="divide-y divide-slate-200/90">
+              <div className="flex">
+                <span className="w-28 px-3 py-1 bg-slate-50 text-slate-500 font-medium border-r border-slate-200/90 text-[11px]">
+                  Invoice No.
+                </span>
+                <span className="flex-1 px-3 py-1 font-black text-slate-900 font-tabular text-[11px]">
+                  {displayInvoiceNumber}
+                </span>
+              </div>
+
+              <div className="flex">
+                <span className="w-28 px-3 py-1 bg-slate-50 text-slate-500 font-medium border-r border-slate-200/90 text-[11px]">
+                  Date
+                </span>
+                <span className="flex-1 px-3 py-1 font-bold text-slate-900 text-[11px]">
+                  {formatDate(sale.date)}
+                </span>
+              </div>
+
+              <div className="flex">
+                <span className="w-28 px-3 py-1 bg-slate-50 text-slate-500 font-medium border-r border-slate-200/90 text-[11px]">
+                  Payment Terms
+                </span>
+                <span className="flex-1 px-3 py-1 font-bold text-slate-800 text-[11px]">
+                  {paymentTerms}
+                </span>
+              </div>
+
+              <div className="flex">
+                <span className="w-28 px-3 py-1 bg-slate-50 text-slate-500 font-medium border-r border-slate-200/90 text-[11px]">
+                  Sales Person
+                </span>
+                <span className="flex-1 px-3 py-1 font-bold text-slate-800 text-[11px]">
+                  {salesperson}
                 </span>
               </div>
             </div>
@@ -137,108 +232,106 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ sale }) => {
         </div>
 
         {/* ========================================================= */}
-        {/* 2. BILL TO SECTION                                        */}
+        {/* 3. CUSTOMER SECTION: BILL TO & SHIP TO                    */}
         {/* ========================================================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-6 text-xs border-b border-slate-200">
-          <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-1.5">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-              Bill To / Buyer Details
-            </span>
-            <div className="text-sm font-black text-slate-900">
-              {sale.customer.businessName || sale.customer.name}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+          {/* BILL TO Card */}
+          <div className="bg-[#F1F6FD] rounded-xl p-3.5 border border-[#E1EDFC] flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#E1EDFC] text-[#07478E] flex items-center justify-center shrink-0 mt-0.5">
+              <Building2 className="w-4 h-4" />
             </div>
-            {sale.customer.businessName && sale.customer.name && (
-              <p className="text-slate-600 font-medium">
-                <span className="text-slate-400">Contact:</span> {sale.customer.name}
+
+            <div className="min-w-0 flex-1 space-y-0.5 text-xs">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#07478E] block">
+                BILL TO
+              </span>
+              <div className="font-black text-slate-900 text-xs sm:text-sm truncate">
+                {customerTitle}
+              </div>
+              <p className="text-[11px] text-slate-600 leading-tight line-clamp-2">
+                {customerFullAddress}
               </p>
-            )}
-            <p className="text-slate-600 font-medium">
-              <span className="text-slate-400">Phone:</span> {sale.customer.phone}
-            </p>
-            {(sale.customer.address || sale.customer.city) && (
-              <p className="text-slate-600 font-medium">
-                <span className="text-slate-400">Address:</span>{' '}
-                {[sale.customer.address, sale.customer.city].filter(Boolean).join(', ')}
-              </p>
-            )}
-            {sale.customer.gstNumber && (
-              <p className="text-slate-700 font-bold pt-0.5">
-                <span className="text-slate-400 font-semibold">Customer GSTIN:</span>{' '}
-                {sale.customer.gstNumber}
-              </p>
-            )}
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-700 pt-0.5">
+                <Phone className="w-3 h-3 text-[#07478E]" />
+                <span>+91 {sale.customer.phone.replace(/[^0-9]/g, '').slice(-10)}</span>
+              </div>
+              {sale.customer.gstNumber && (
+                <p className="text-[10px] font-bold text-[#07478E] pt-0.5">
+                  GSTIN: {sale.customer.gstNumber}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-1.5 flex flex-col justify-between">
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                Dispatch & Order Details
-              </span>
-              <p className="text-slate-600 font-medium">
-                <span className="text-slate-400">Order Reference:</span> #{sale.saleNumber}
-              </p>
-              <p className="text-slate-600 font-medium">
-                <span className="text-slate-400">Place of Supply:</span> Raipur, Chhattisgarh
-              </p>
-              <p className="text-slate-600 font-medium">
-                <span className="text-slate-400">Total Units:</span> {totalCans} Cans ({sale.items.length} {sale.items.length === 1 ? 'Item' : 'Items'})
-              </p>
+          {/* SHIP TO Card */}
+          <div className="bg-[#F1F6FD] rounded-xl p-3.5 border border-[#E1EDFC] flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#E1EDFC] text-[#07478E] flex items-center justify-center shrink-0 mt-0.5">
+              <FileText className="w-4 h-4" />
             </div>
 
-            {sale.notes && (
-              <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600">
-                <span className="font-bold text-slate-700">Remarks:</span> {sale.notes}
+            <div className="min-w-0 flex-1 space-y-0.5 text-xs">
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#07478E]">
+                  SHIP TO
+                </span>
+                <span className="text-[9px] text-slate-400 font-medium">(If Different)</span>
               </div>
-            )}
+              <p className="text-[11px] font-semibold text-slate-700 pt-1">
+                {sale.notes ? sale.notes : 'Same as Bill To'}
+              </p>
+              <p className="text-[10px] text-slate-500 leading-snug">
+                Delivery Location: {sale.customer.city || 'Bilaspur, Chhattisgarh'}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* 3. ITEMS TABLE                                            */}
+        {/* 4. PRODUCT TABLE                                          */}
         {/* ========================================================= */}
-        <div className="py-6">
+        <div className="pt-1 rounded-xl overflow-hidden border border-slate-200">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b-2 border-slate-900 text-[11px] font-black uppercase tracking-wider text-slate-900 bg-slate-100/70">
-                <th className="py-3 px-3 w-10 text-center">#</th>
-                <th className="py-3 px-3">Product Description</th>
-                <th className="py-3 px-3 text-center">Pack Size</th>
-                <th className="py-3 px-3 text-right">Qty</th>
-                <th className="py-3 px-3 text-right">Rate (₹)</th>
-                <th className="py-3 px-3 text-right">Amount (₹)</th>
+              <tr className="bg-[#07478E] text-white text-[11px] font-extrabold uppercase tracking-wider">
+                <th className="py-2.5 px-3 w-10 text-center">#</th>
+                <th className="py-2.5 px-3">Product</th>
+                <th className="py-2.5 px-3 text-center w-24">Pack Size</th>
+                <th className="py-2.5 px-3 text-center w-16">Qty</th>
+                <th className="py-2.5 px-3 text-right w-24">Rate (₹)</th>
+                <th className="py-2.5 px-3 text-right w-28">Amount (₹)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-xs">
               {sale.items.map((item, index) => {
                 const pack = item.product?.packSizeLitres
-                  ? `${item.product.packSizeLitres} Litres`
-                  : '5 Litres';
+                  ? `${item.product.packSizeLitres}L`
+                  : '5L';
+                const subtitle = getProductSubtitle(item.product?.name || '');
+
                 return (
-                  <tr key={item.id} className="hover:bg-slate-50/50">
-                    <td className="py-3 px-3 text-center font-bold text-slate-400">
+                  <tr key={item.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="py-2.5 px-3 text-center font-bold text-slate-400">
                       {index + 1}
                     </td>
-                    <td className="py-3 px-3">
-                      <div className="font-extrabold text-slate-900 text-xs sm:text-sm">
+                    <td className="py-2.5 px-3">
+                      <div className="font-extrabold text-slate-900 text-xs sm:text-[13px]">
                         {item.product?.name || 'BIHAAN Product'}
                       </div>
-                      {item.product?.sku && (
-                        <div className="text-[10px] font-mono text-slate-400">
-                          SKU: {item.product.sku}
-                        </div>
-                      )}
+                      <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                        {subtitle}
+                      </div>
                     </td>
-                    <td className="py-3 px-3 text-center font-semibold text-slate-600 whitespace-nowrap">
+                    <td className="py-2.5 px-3 text-center font-bold text-slate-700 whitespace-nowrap">
                       {pack}
                     </td>
-                    <td className="py-3 px-3 text-right font-extrabold font-tabular text-slate-900">
-                      {item.quantity} cans
+                    <td className="py-2.5 px-3 text-center font-black font-tabular text-slate-900">
+                      {item.quantity}
                     </td>
-                    <td className="py-3 px-3 text-right font-semibold font-tabular text-slate-700">
-                      {formatCurrency(item.unitPrice)}
+                    <td className="py-2.5 px-3 text-right font-semibold font-tabular text-slate-700">
+                      {Math.round(item.unitPrice)}
                     </td>
-                    <td className="py-3 px-3 text-right font-black font-tabular text-slate-900 text-xs sm:text-sm">
-                      {formatCurrency(item.lineTotal)}
+                    <td className="py-2.5 px-3 text-right font-black font-tabular text-slate-900 text-xs sm:text-[13px]">
+                      {Math.round(item.lineTotal)}
                     </td>
                   </tr>
                 );
@@ -248,138 +341,189 @@ export const InvoiceDocument: React.FC<InvoiceDocumentProps> = ({ sale }) => {
         </div>
 
         {/* ========================================================= */}
-        {/* 4. TOTALS & SUMMARY BREAKDOWN                             */}
+        {/* 5. PAYMENT CARD + TOTAL CALCULATION                       */}
         {/* ========================================================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 pb-6 border-t-2 border-slate-900">
-          {/* Left Column: Words & Payment Details */}
-          <div className="space-y-4">
-            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-1">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                Amount in Words
-              </span>
-              <p className="font-black text-slate-900 italic leading-snug">
-                {numberToWordsIndian(sale.totalAmount)}
-              </p>
-            </div>
-
-            <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs space-y-1.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">
-                Payment Information
-              </span>
-              <div className="flex justify-between text-slate-600">
-                <span>Payment Mode:</span>
-                <span className="font-extrabold text-slate-900">{paymentMethod}</span>
-              </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Amount Received:</span>
-                <span className="font-bold text-emerald-700 font-tabular">
-                  {formatCurrency(sale.paidAmount)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1 items-start">
+          {/* Left Column: PAYMENT Summary Box */}
+          <div className="bg-[#F1F6FD] rounded-xl p-4 border border-[#E1EDFC] flex items-center justify-between gap-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-[#E1EDFC] text-[#07478E] flex items-center justify-center">
+                  <Coins className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-black uppercase tracking-wider text-[#07478E]">
+                  PAYMENT
                 </span>
               </div>
-              {balanceDue > 0 && (
-                <div className="flex justify-between text-rose-700 font-bold border-t border-slate-200/80 pt-1">
-                  <span>Balance Due:</span>
-                  <span className="font-tabular font-black">{formatCurrency(balanceDue)}</span>
+
+              <div className="space-y-1 text-xs text-slate-700">
+                <div className="flex gap-2">
+                  <span className="w-24 text-slate-500 font-medium">Total Amount</span>
+                  <span className="text-slate-400">:</span>
+                  <span className="font-black font-tabular text-slate-900">
+                    {formatCurrency(sale.totalAmount)}
+                  </span>
                 </div>
-              )}
+                <div className="flex gap-2">
+                  <span className="w-24 text-slate-500 font-medium">Amount Paid</span>
+                  <span className="text-slate-400">:</span>
+                  <span className="font-bold font-tabular text-emerald-700">
+                    {formatCurrency(sale.paidAmount)}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-24 text-slate-500 font-medium">Balance Due</span>
+                  <span className="text-slate-400">:</span>
+                  <span className="font-black font-tabular text-slate-900">
+                    {formatCurrency(balanceDue)}
+                  </span>
+                </div>
+              </div>
             </div>
+
+            {/* Red / Green Status Callout Badge */}
+            {balanceDue > 0 ? (
+              <div className="bg-[#FFF0F0] border border-[#FECDD3] rounded-xl px-4 py-3 text-center shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 block">
+                  AMOUNT DUE
+                </span>
+                <span className="text-2xl font-black font-tabular text-rose-600 tracking-tight">
+                  {formatCurrency(balanceDue)}
+                </span>
+              </div>
+            ) : (
+              <div className="bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl px-4 py-3 text-center shrink-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 block">
+                  STATUS
+                </span>
+                <span className="text-lg font-black font-tabular text-emerald-700 tracking-tight">
+                  FULLY PAID
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Right Column: Financial Calculation */}
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between text-slate-600 py-1">
-              <span className="font-semibold">Subtotal</span>
-              <span className="font-extrabold text-slate-900 font-tabular text-sm">
+          {/* Right Column: Subtotal, TOTAL Banner, Words */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-slate-600 px-1">
+              <span className="font-bold">Subtotal</span>
+              <span className="font-extrabold text-slate-900 font-tabular">
                 {formatCurrency(sale.subtotalAmount)}
               </span>
             </div>
 
             {sale.discountAmount > 0 && (
-              <div className="flex justify-between text-rose-600 py-1">
-                <span className="font-semibold">Special Discount</span>
-                <span className="font-extrabold font-tabular text-sm">
+              <div className="flex justify-between text-xs text-rose-600 px-1">
+                <span className="font-bold">Discount</span>
+                <span className="font-extrabold font-tabular">
                   -{formatCurrency(sale.discountAmount)}
                 </span>
               </div>
             )}
 
-            {/* Total Amount High-Emphasis Box */}
-            <div className="bg-slate-900 text-white rounded-2xl p-4 my-2 flex justify-between items-center shadow-md">
-              <div>
-                <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 block">
-                  Total Payable
-                </span>
-                <span className="text-[10px] text-slate-300 font-medium">
-                  Net invoice value
-                </span>
-              </div>
-              <div className="text-2xl sm:text-3xl font-black font-tabular tracking-tight text-white">
+            {/* Big Royal Blue Total Banner */}
+            <div className="bg-[#07478E] text-white rounded-lg px-4 py-2.5 flex justify-between items-center shadow-xs">
+              <span className="text-base font-black tracking-wider uppercase">TOTAL</span>
+              <span className="text-2xl sm:text-3xl font-black font-tabular tracking-tight">
                 {formatCurrency(sale.totalAmount)}
-              </div>
+              </span>
             </div>
 
-            <div className="space-y-1 pt-2">
-              <div className="flex justify-between text-slate-600 py-0.5">
-                <span className="font-semibold">Amount Paid:</span>
-                <span className="font-extrabold text-emerald-700 font-tabular">
-                  {formatCurrency(sale.paidAmount)}
-                </span>
-              </div>
-              <div className="flex justify-between text-slate-800 py-0.5 border-t border-slate-200 pt-1">
-                <span className="font-bold">Balance Outstanding:</span>
-                <span
-                  className={`font-black font-tabular text-sm ${
-                    balanceDue > 0 ? 'text-rose-600' : 'text-emerald-700'
-                  }`}
-                >
-                  {formatCurrency(balanceDue)}
-                </span>
-              </div>
+            {/* Amount in Words */}
+            <div className="px-1 pt-0.5 space-y-0.5 text-left">
+              <span className="text-[10px] font-semibold text-slate-400 block">
+                Amount in Words:
+              </span>
+              <p className="text-xs font-bold text-slate-800 italic">
+                {numberToWordsIndian(sale.totalAmount)}
+              </p>
             </div>
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* 5. NON-GST COMPLIANCE DECLARATION                        */}
+        {/* 6. NOTE SECTION (Subtle & Professional)                  */}
         {/* ========================================================= */}
-        <div className="my-4 p-3 bg-amber-50/60 rounded-xl border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
-          <span className="font-black text-amber-800 shrink-0">Note:</span>
-          <span>
-            BIHAAN HOME CARE is currently not registered under GST. No GST has been charged on
-            this invoice.
-          </span>
+        <div className="bg-[#F1F6FD] rounded-xl p-3 border border-[#E1EDFC] flex items-center gap-3 text-xs text-slate-700">
+          <div className="w-6 h-6 rounded-full bg-[#07478E] text-white flex items-center justify-center shrink-0">
+            <Info className="w-3.5 h-3.5" />
+          </div>
+          <div className="text-[11px] leading-snug">
+            <span className="font-black text-slate-900">Note: </span>
+            <span>
+              BIHAAN HOME CARE is currently not registered under GST. No GST has been charged on
+              this invoice.
+            </span>
+          </div>
         </div>
       </div>
 
       {/* ========================================================= */}
-      {/* 6. SIGN-OFF & FOOTER                                      */}
+      {/* 7. FOOTER: THANK YOU, BRAND PILLARS & SIGN-OFF            */}
       {/* ========================================================= */}
-      <div className="pt-6 border-t border-slate-200 mt-6 space-y-6">
-        <div className="flex justify-between items-end">
-          <div className="text-[11px] text-slate-500 max-w-xs space-y-1">
-            <p className="font-bold text-slate-700">Terms & Conditions:</p>
-            <p>1. Goods once sold are non-refundable except for manufacturing defects.</p>
-            <p>2. Please check cans and pack seals upon receipt.</p>
+      <div className="pt-4 border-t border-slate-100 mt-4 relative">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          {/* Left Thank You Message */}
+          <div className="text-left space-y-0.5">
+            <p className="text-xl sm:text-2xl font-serif italic font-bold text-[#07478E] leading-none">
+              Thank you
+            </p>
+            <p className="text-xs font-bold text-slate-800">
+              for choosing <span className="text-[#07478E]">BIHAAN HOME CARE.</span>
+            </p>
+            <p className="text-[11px] italic text-slate-400">Every day is a fresh beginning.</p>
           </div>
 
-          <div className="text-right space-y-12">
-            <p className="text-xs font-black text-slate-900 uppercase">
-              For BIHAAN HOME CARE
-            </p>
-            <div className="border-t border-slate-400 pt-1 w-44 inline-block text-center">
-              <p className="text-[11px] font-bold text-slate-600">Authorized Signatory</p>
+          {/* Center 3 Brand Pillars */}
+          <div className="flex items-center gap-3 sm:gap-4 divide-x divide-slate-200">
+            <div className="text-center space-y-1">
+              <div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center mx-auto text-[#07478E]">
+                <Leaf className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[9px] font-black uppercase text-[#07478E] block leading-tight">
+                CLEANER
+                <br />
+                SPACES
+              </span>
+            </div>
+
+            <div className="pl-3 sm:pl-4 text-center space-y-1">
+              <div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center mx-auto text-[#07478E]">
+                <ShieldCheck className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[9px] font-black uppercase text-[#07478E] block leading-tight">
+                HEALTHIER
+                <br />
+                PEOPLE
+              </span>
+            </div>
+
+            <div className="pl-3 sm:pl-4 text-center space-y-1">
+              <div className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center mx-auto text-[#07478E]">
+                <Home className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-[9px] font-black uppercase text-[#07478E] block leading-tight">
+                BRIGHTER
+                <br />
+                TOMORROWS
+              </span>
+            </div>
+          </div>
+
+          {/* Right Signature Script Brand line */}
+          <div className="text-right">
+            <div className="text-right leading-tight font-serif italic text-base sm:text-lg text-[#07478E]">
+              <span>Clean</span>
+              <br />
+              <span className="text-slate-600">Care</span>
+              <br />
+              <span className="text-[#F97316] font-bold">Continue...</span>
             </div>
           </div>
         </div>
 
-        <div className="text-center border-t border-slate-100 pt-4 text-[11px] text-slate-400 space-y-0.5">
-          <p className="font-bold text-slate-600">
-            Thank you for choosing BIHAAN HOME CARE!
-          </p>
-          <p>
-            Every day is a fresh beginning. • Raipur, Chhattisgarh • Support: +91 91095 86968
-          </p>
-        </div>
+        {/* Decorative Wave/Gradient Bar at bottom */}
+        <div className="mt-3 h-1 w-full bg-gradient-to-r from-[#07478E] via-[#0284c7] to-[#F97316] rounded-full opacity-80" />
       </div>
     </div>
   );

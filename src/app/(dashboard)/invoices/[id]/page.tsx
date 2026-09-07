@@ -175,7 +175,7 @@ export default function InvoicePage() {
             <button
               onClick={handlePrint}
               type="button"
-              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-white bg-indigo-600 hover:bg-indigo-700 py-2 px-4 rounded-xl shadow-xs transition-all active:scale-95"
+              className="inline-flex items-center gap-1.5 text-xs font-extrabold text-white bg-[#07478E] hover:bg-[#063b77] py-2 px-4 rounded-xl shadow-xs transition-all active:scale-95"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print / PDF</span>

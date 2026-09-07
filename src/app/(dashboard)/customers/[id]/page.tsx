@@ -594,6 +594,7 @@ export default function CustomerDetailPage() {
                           : sale.paymentStatus === 'PARTIALLY_PAID'
                           ? 'Partial'
                           : 'Due'}
+                      </span>
                     </div>
                     <button
                       type="button"

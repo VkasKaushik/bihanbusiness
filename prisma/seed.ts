@@ -7,15 +7,18 @@ async function main() {
   console.log('Seeding BIHAN BUSINESS database...');
 
   // 1. Seed Founders
-  const defaultPasswordHash = await bcrypt.hash('bihan123', 10);
+  const vikasPasswordHash = await bcrypt.hash('Vikas123@', 10);
+  const rupeshPasswordHash = await bcrypt.hash('Bihan123@', 10);
 
   const vikas = await prisma.user.upsert({
     where: { username: 'vikas' },
-    update: {},
+    update: {
+      passwordHash: vikasPasswordHash,
+    },
     create: {
       name: 'Vikas',
       username: 'vikas',
-      passwordHash: defaultPasswordHash,
+      passwordHash: vikasPasswordHash,
       role: 'FOUNDER',
       phone: '9827000001',
     },
@@ -23,11 +26,13 @@ async function main() {
 
   const rupesh = await prisma.user.upsert({
     where: { username: 'rupesh' },
-    update: {},
+    update: {
+      passwordHash: rupeshPasswordHash,
+    },
     create: {
       name: 'Rupesh',
       username: 'rupesh',
-      passwordHash: defaultPasswordHash,
+      passwordHash: rupeshPasswordHash,
       role: 'FOUNDER',
       phone: '9827000002',
     },

@@ -6,14 +6,20 @@ import { ArrowRight, ShieldCheck, Check, Eye, EyeOff, AlertCircle } from 'lucide
 
 export default function LoginPage() {
   const router = useRouter();
-  const [selectedFounder, setSelectedFounder] = useState<'vikas' | 'rupesh'>('vikas');
-  const [password, setPassword] = useState('bihan123');
+  const [selectedFounder, setSelectedFounder] = useState<'vikas' | 'rupesh' | null>(null);
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
+    if (!selectedFounder) {
+      setError('Please select your account first');
+      return;
+    }
+
     if (!password) {
       setError('Please enter your password');
       return;
@@ -152,8 +158,12 @@ export default function LoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full bg-white border border-[#ECEEF3] focus:border-indigo-600 rounded-xl px-3.5 py-3 pr-10 text-sm font-semibold text-slate-900 focus:outline-none transition-all shadow-xs"
+                placeholder={
+                  selectedFounder
+                    ? `Enter password for ${selectedFounder === 'vikas' ? 'Vikas' : 'Rupesh'}`
+                    : 'Select account above, then enter password'
+                }
+                className="w-full bg-white border border-[#ECEEF3] focus:border-indigo-600 rounded-xl px-3.5 py-3 pr-10 text-sm font-semibold text-slate-900 focus:outline-none transition-all shadow-xs placeholder:text-slate-400 placeholder:font-normal"
                 required
               />
               <button
@@ -182,14 +192,18 @@ export default function LoginPage() {
           {/* 3. PRIMARY SIGN IN BUTTON */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !selectedFounder || !password}
             className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-98 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
           >
             {loading ? (
               <span className="inline-block animate-pulse">Signing in...</span>
             ) : (
               <>
-                <span>Sign in</span>
+                <span>
+                  {selectedFounder
+                    ? `Sign in as ${selectedFounder === 'vikas' ? 'Vikas' : 'Rupesh'}`
+                    : 'Select Account to Sign In'}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

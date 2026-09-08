@@ -22,8 +22,10 @@ import {
   ChevronRight,
   FileText,
   MessageCircle,
+  Calendar,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
+import { getISTDateParts, formatISTDate } from '@/lib/date-utils';
 import { ProductImage } from '@/components/common/ProductImage';
 
 interface UniversalPlusModalProps {
@@ -56,6 +58,22 @@ interface CustomerOption {
   phone: string;
   city: string;
   outstandingBalance: number;
+}
+
+function getTodayISTString(): string {
+  const parts = getISTDateParts(new Date());
+  const mm = String(parts.month).padStart(2, '0');
+  const dd = String(parts.day).padStart(2, '0');
+  return `${parts.year}-${mm}-${dd}`;
+}
+
+function getYesterdayISTString(): string {
+  const now = new Date();
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const parts = getISTDateParts(yesterday);
+  const mm = String(parts.month).padStart(2, '0');
+  const dd = String(parts.day).padStart(2, '0');
+  return `${parts.year}-${mm}-${dd}`;
 }
 
 export default function UniversalPlusModal({
@@ -122,6 +140,7 @@ export default function UniversalPlusModal({
   const [expDesc, setExpDesc] = useState('');
   const [expCategoryId, setExpCategoryId] = useState('');
   const [expSource, setExpSource] = useState<'BUSINESS_CASH' | 'BUSINESS_BANK' | 'FOUNDER_PERSONAL'>('BUSINESS_CASH');
+  const [expDate, setExpDate] = useState<string>(getTodayISTString());
 
   // SUCCESS Confirmation State
   const [successHeadline, setSuccessHeadline] = useState('');
@@ -183,6 +202,7 @@ export default function UniversalPlusModal({
     setCollRef('');
     setExpAmount(0);
     setExpDesc('');
+    setExpDate(getTodayISTString());
     setCreatedSaleId(null);
     setCreatedSaleWhatsAppUrl('');
   };
@@ -486,6 +506,8 @@ export default function UniversalPlusModal({
       return;
     }
 
+    const selectedDate = expDate ? new Date(`${expDate}T12:00:00+05:30`) : new Date();
+
     setLoading(true);
     try {
       const res = await fetch('/api/expenses', {
@@ -496,6 +518,7 @@ export default function UniversalPlusModal({
           description: expDesc.trim(),
           categoryId: expCategoryId,
           paymentSource: expSource,
+          date: selectedDate.toISOString(),
         }),
       });
 
@@ -512,6 +535,7 @@ export default function UniversalPlusModal({
       setSuccessHeadline('Expense Recorded! ✓');
       setSuccessDetails([
         `Amount: ${formatCurrency(expAmount)}`,
+        `Date: ${formatISTDate(selectedDate)}`,
         `Description: ${expDesc.trim()}`,
         `Paid by: ${sourceLabel}`,
         'Updated ledger and settlement balances',
@@ -1456,6 +1480,66 @@ export default function UniversalPlusModal({
               />
             </div>
 
+            {/* Expense Date */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Expense Date</span>
+                </label>
+                <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md">
+                  {expDate === getTodayISTString()
+                    ? 'Today'
+                    : expDate === getYesterdayISTString()
+                    ? 'Yesterday'
+                    : 'Past Date'}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpDate(getTodayISTString())}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+                      expDate === getTodayISTString()
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpDate(getYesterdayISTString())}
+                    className={`flex-1 py-2 text-xs font-bold rounded-xl border transition-all ${
+                      expDate === getYesterdayISTString()
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    Yesterday
+                  </button>
+                </div>
+
+                <input
+                  type="date"
+                  max={getTodayISTString()}
+                  value={expDate}
+                  onChange={(e) => setExpDate(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-900 outline-hidden focus:border-rose-500 focus:bg-white transition-all cursor-pointer"
+                />
+
+                <div className="bg-slate-50 border border-slate-200/80 rounded-xl px-3.5 py-2 flex items-center justify-between text-xs">
+                  <span className="text-slate-500 font-medium">Recording for date:</span>
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-rose-600" />
+                    {formatISTDate(new Date(`${expDate}T12:00:00+05:30`))}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="text-xs font-bold text-slate-700 block mb-1.5">
                 Paid From
@@ -1488,7 +1572,11 @@ export default function UniversalPlusModal({
               onClick={handleExpenseSubmit}
               className="w-full py-3.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-98"
             >
-              <span>{loading ? 'Recording...' : 'Record Expense ✓'}</span>
+              <span>
+                {loading
+                  ? 'Recording...'
+                  : `Record Expense for ${formatISTDate(new Date(`${expDate}T12:00:00+05:30`))} ✓`}
+              </span>
             </button>
           </div>
         )}

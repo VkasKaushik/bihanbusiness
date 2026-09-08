@@ -76,4 +76,36 @@ export class PaymentsService {
       take: limit,
     });
   }
+
+  static async deleteCustomerPayment(paymentId: string) {
+    return await prisma.$transaction(async (tx) => {
+      const payment = await tx.customerPayment.findUnique({
+        where: { id: paymentId },
+      });
+
+      if (!payment) {
+        throw new Error('Payment transaction not found');
+      }
+
+      // If linked to a sale, adjust sale's paid amount & status
+      if (payment.saleId) {
+        const sale = await tx.sale.findUnique({ where: { id: payment.saleId } });
+        if (sale) {
+          const newPaid = Math.max(0, sale.paidAmount - payment.amount);
+          const status = newPaid <= 0 ? 'UNPAID' : newPaid >= sale.totalAmount ? 'PAID' : 'PARTIALLY_PAID';
+          await tx.sale.update({
+            where: { id: payment.saleId },
+            data: {
+              paidAmount: newPaid,
+              paymentStatus: status,
+            },
+          });
+        }
+      }
+
+      return await tx.customerPayment.delete({
+        where: { id: paymentId },
+      });
+    });
+  }
 }

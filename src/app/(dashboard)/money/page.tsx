@@ -16,6 +16,9 @@ import {
   Sparkles,
   CreditCard,
   MoreHorizontal,
+  Trash2,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import { MoneyOverview } from '@/types';
 import {
@@ -31,6 +34,8 @@ export default function FinancialReportsPage() {
   const [loading, setLoading] = useState(true);
   const [plusModalOpen, setPlusModalOpen] = useState(false);
   const [timeframe, setTimeframe] = useState<'Monthly' | 'This Week'>('Monthly');
+  const [deletingTx, setDeletingTx] = useState<{ id: string; type: string; title: string; amount: number } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadData = async () => {
     try {
@@ -42,6 +47,31 @@ export default function FinancialReportsPage() {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingTx) return;
+    setIsDeleting(true);
+    try {
+      const endpoint =
+        deletingTx.type === 'COLLECTION'
+          ? `/api/payments/customer?id=${deletingTx.id}`
+          : `/api/expenses?id=${deletingTx.id}`;
+
+      const res = await fetch(endpoint, { method: 'DELETE' });
+      if (res.ok) {
+        setDeletingTx(null);
+        await loadData();
+      } else {
+        const err = await res.json();
+        alert(err?.error || 'Failed to delete transaction');
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert('Error deleting transaction');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -300,16 +330,27 @@ export default function FinancialReportsPage() {
                     </div>
                   </div>
 
-                  <div className="text-right shrink-0">
-                    <div
-                      className={`font-black font-tabular text-sm ${
-                        isCollection ? 'text-emerald-600' : 'text-rose-600'
-                      }`}
-                    >
-                      {isCollection ? '+' : '-'}
-                      {formatCurrency(tx.amount)}
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right">
+                      <div
+                        className={`font-black font-tabular text-sm ${
+                          isCollection ? 'text-emerald-600' : 'text-rose-600'
+                        }`}
+                      >
+                        {isCollection ? '+' : '-'}
+                        {formatCurrency(tx.amount)}
+                      </div>
+                      <span className="text-[10px] text-slate-400 block mt-0.5">{tx.method}</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 block mt-0.5">{tx.method}</span>
+
+                    <button
+                      type="button"
+                      onClick={() => setDeletingTx({ id: tx.id, type: tx.type, title: tx.title, amount: tx.amount })}
+                      className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all active:scale-95"
+                      title="Delete transaction"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               );
@@ -317,6 +358,57 @@ export default function FinancialReportsPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deletingTx && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="font-extrabold text-base text-slate-900">Delete Transaction?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Are you sure you want to delete this {deletingTx.type === 'COLLECTION' ? 'customer collection' : 'expense'} of{' '}
+                <span className="font-bold text-slate-800">{formatCurrency(deletingTx.amount)}</span> ({deletingTx.title})?
+              </p>
+              <p className="text-[11px] text-amber-600 font-medium pt-1">
+                This will recalculate balances and cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeletingTx(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteConfirm}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 text-xs font-bold text-white hover:bg-rose-700 transition-colors flex items-center justify-center gap-1.5 shadow-sm shadow-rose-200"
+              >
+                {isDeleting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Universal Plus Modal */}
       <UniversalPlusModal

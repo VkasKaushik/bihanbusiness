@@ -71,3 +71,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error?.message || 'Error creating expense' }, { status: 400 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Expense ID is required' }, { status: 400 });
+    }
+
+    await prisma.expense.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Expense deleted successfully' });
+  } catch (error: any) {
+    console.error('Delete expense error:', error);
+    return NextResponse.json({ error: error?.message || 'Error deleting expense' }, { status: 400 });
+  }
+}
